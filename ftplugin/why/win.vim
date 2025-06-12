@@ -29,8 +29,11 @@ function! s:CreateWhy3Window() abort
     call append(0, [
             \ 'Why3 Goal Panel',
             \ '',
-            \ 'Goals will appear here:',
-            \ '---------------------'
+            \ 'Status:   Goals:',
+            \ '--------|----------------',
+            \ '        |',
+            \ '        |',
+            \ '        |',
             \ ])
 
     " Assign name
@@ -48,8 +51,7 @@ function! s:CreateWhy3Window() abort
             \ 'Why3 Log Panel',
             \ '',
             \ 'Log messages:',
-            \ '-------------'
-            \ ])
+            \ '---------------------'])
 
     execute 'file [Log_Panel]'
     

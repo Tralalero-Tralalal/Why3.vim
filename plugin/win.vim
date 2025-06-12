@@ -1,10 +1,7 @@
 command! Why3Start call s:StartWhy3Session()
+command! Why3End call s:EndWhy3Session()
 
 function! s:StartWhy3Session() abort
-    " Check if the Why3 buffer already exists.
-    " bufnr('[Why3]') returns 
-    " the buffer number if a buffer named '[Why3]' exists
-    " otherwise it returns -1
     if bufexists('[Goal_Panel]') && bufexists('[Log_Panel]')
         echomsg "Why3 sidebar is already active."
         return "already_started"  
@@ -15,6 +12,9 @@ function! s:StartWhy3Session() abort
     call s:CreateWhy3Window()
 
 endfunction
+
+let s:goal_win_id = -1
+let s:log_win_id = -1
 
 function! s:CreateWhy3Window() abort
     " Create a new vertical split with a truly new, empty buffer
@@ -29,21 +29,38 @@ function! s:CreateWhy3Window() abort
     " Assign name
     execute 'file [Goal_Panel]'
 
+    let s:goal_win_id = win_getid()
+
     " Create a horizontal split for the Log Panel
     new
 
     " Set simple params
     setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nonumber norelativenumber
     execute 'file [Log_Panel]'
+    
+    let s:log_win_id = win_getid()
 
 endfunction
 
-function! s:FocusBuffer(buf_id_or_name) abort
-  let l:target_win_nr = bufwinnr(a:buf_id_or_name)
-  if l:target_win_nr != -1
-    execute l:target_win_nr . 'wincmd w'
-  else
-    echomsg "Buffer '" . a:buf_id_or_name . "' not found in any visible window."
-  endif
+function! s:CloseWindowById(target_win_id) abort
+    let l:target_win_nr = win_id2win(a:target_win_id)
+    if l:target_win_nr != 0
+        " Store the current window number so we can potentially return focus later
+        let l:current_win_nr = winnr()
+
+        " Switch to the target window using its number, then close it.
+        " We use 'execute' to build and run the command string.
+        execute l:target_win_nr . 'wincmd w'
+        quit  
+    endif
+endfunction
+
+function! s:EndWhy3Session() abort  
+    if bufexists('[Goal_Panel]') && bufexists('[Log_Panel]')
+      echomsg "closing goal window with id of " . s:goal_win_id
+      execute s:CloseWindowById(s:goal_win_id)
+      echomsg "closing log window with id of " . s:log_win_id
+      execute s:CloseWindowById(s:log_win_id)
+    endif
 endfunction
 

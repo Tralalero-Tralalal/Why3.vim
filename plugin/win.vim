@@ -25,7 +25,14 @@ function! s:CreateWhy3Window() abort
 
     " Set simple params
     setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nonumber norelativenumber
-    
+   
+    call append(0, [
+            \ 'Why3 Goal Panel',
+            \ '',
+            \ 'Goals will appear here:',
+            \ '---------------------'
+            \ ])
+
     " Assign name
     execute 'file [Goal_Panel]'
 
@@ -36,13 +43,21 @@ function! s:CreateWhy3Window() abort
 
     " Set simple params
     setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nonumber norelativenumber
+    
+    call append(0, [
+            \ 'Why3 Log Panel',
+            \ '',
+            \ 'Log messages:',
+            \ '-------------'
+            \ ])
+
     execute 'file [Log_Panel]'
     
     let s:log_win_id = win_getid()
 
 endfunction
 
-function! s:CloseWindowById(target_win_id) abort
+function! s:GoToWindowById(target_win_id) abort
     let l:target_win_nr = win_id2win(a:target_win_id)
     if l:target_win_nr != 0
         " Store the current window number so we can potentially return focus later
@@ -51,16 +66,18 @@ function! s:CloseWindowById(target_win_id) abort
         " Switch to the target window using its number, then close it.
         " We use 'execute' to build and run the command string.
         execute l:target_win_nr . 'wincmd w'
-        quit  
     endif
 endfunction
 
 function! s:EndWhy3Session() abort  
     if bufexists('[Goal_Panel]') && bufexists('[Log_Panel]')
       echomsg "closing goal window with id of " . s:goal_win_id
-      execute s:CloseWindowById(s:goal_win_id)
+        execute s:GoToWindowById(s:goal_win_id)
+          quit
+
       echomsg "closing log window with id of " . s:log_win_id
-      execute s:CloseWindowById(s:log_win_id)
+        execute s:GoToWindowById(s:log_win_id)
+          quit
     endif
 endfunction
 

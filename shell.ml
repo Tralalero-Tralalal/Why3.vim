@@ -56,7 +56,7 @@ let send_request = Protocol_shell.send_request
 
 module Server = Itp_server.Make (Unix_scheduler) (Protocol_shell)
 
-let config = Whyconf.init_config None
+let config = Whyconf.init_config (Some ".why3.conf")
 let main : Whyconf.main = Whyconf.get_main config
 let env : Env.env = Env.create_env (Whyconf.loadpath main)
 

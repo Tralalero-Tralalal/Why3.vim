@@ -118,4 +118,4 @@ let main : Whyconf.main = Whyconf.get_main config
 let env : Env.env = Env.create_env (Whyconf.loadpath main)
 
 let () =
-  Server.init_server (read_config None) env "session_dir";
+  Server.init_server config env "/home/humam/Projects/my-projects/why3.nvim/hello";

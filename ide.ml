@@ -36,6 +36,7 @@ let debug_json =
   Debug.register_flag "json_proto"
     ~desc:"Print@ json@ requests@ and@ notifications@"
 
+(*Protocol Module*)
 module Protocol_why3ide = struct
   let debug_proto =
     Debug.register_flag "ide_proto"
@@ -75,6 +76,7 @@ module Protocol_why3ide = struct
     notification_list := [];
     l
 end
+(*Protocol Module*)
 
 (* The gtk scheduler is catching all exceptions avoiding the printing of the
    backtrace that is normally done by debug option stack_trace. To recover this

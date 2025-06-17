@@ -1,16 +1,13 @@
 command! Why3Start call s:StartWhy3Session()
 command! Why3End call s:EndWhy3Session()
-command! HelloPython :python hello_from_python()
+command! TestPy call s:TestPy()
 
-function! hello_from_python()
-  python << EOF
-def hello():
-    print("Hello from Python function!")
-hello()
-EOF
+py3 from server.py import Skibidi
+
+function! s:TestPy() abort
+  let s:something = py3eval(Skibidi.run_why3()) 
+  print(s:something)
 endfunction
-
-    let startline = line("'<")
 
 function! s:StartWhy3Session() abort
     if bufexists('[Goal_Panel]') && bufexists('[Log_Panel]')

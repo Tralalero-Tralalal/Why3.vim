@@ -1,5 +1,16 @@
 command! Why3Start call s:StartWhy3Session()
 command! Why3End call s:EndWhy3Session()
+command! HelloPython :python hello_from_python()
+
+function! hello_from_python()
+  python << EOF
+def hello():
+    print("Hello from Python function!")
+hello()
+EOF
+endfunction
+
+    let startline = line("'<")
 
 function! s:StartWhy3Session() abort
     if bufexists('[Goal_Panel]') && bufexists('[Log_Panel]')

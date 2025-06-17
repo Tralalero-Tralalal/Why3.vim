@@ -1,13 +1,6 @@
 command! Why3Start call s:StartWhy3Session()
 command! Why3End call s:EndWhy3Session()
-command! TestPy call s:TestPy()
-
-py3 from server.py import Skibidi
-
-function! s:TestPy() abort
-  let s:something = py3eval(Skibidi.run_why3()) 
-  print(s:something)
-endfunction
+command! Whatever echo system('./why3')
 
 function! s:StartWhy3Session() abort
     if bufexists('[Goal_Panel]') && bufexists('[Log_Panel]')

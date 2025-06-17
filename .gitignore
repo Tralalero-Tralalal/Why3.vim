@@ -2,3 +2,4 @@ _build/
 *.native
 hello
 why3.opt
+why3

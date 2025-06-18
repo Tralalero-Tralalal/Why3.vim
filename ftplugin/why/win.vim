@@ -3,36 +3,27 @@ command! Why3End call s:EndWhy3Session()
 command! StartServer call s:Start_Shell()
 command! StopServer call s:Stop_Shell()
 
-let s:is_running = 0
 let s:job_id = 0
 
 function! s:Start_Shell() abort
-  if s:is_running == 1 
+  let running = jobwait([s:job_id], 0)[0] == -1
+  if running == 1 
     echomsg "shell server already running"
   else
-    let s:job_id = jobstart('./why3 shell')
+    let s:job_id = jobstart('./why3 shell hello.why')
     if s:job_id == 0 
       echomsg "failed to start shell server"
     elseif s:job_id == -1
       echomsg "where is the executeable"
     else
       echomsg "started shell with id of " . s:job_id
-      let s:is_running = 1
     endif
-    " echomsg "stopping job of id " . s:job_id
-    " let l:err = jobstop(s:job_id)
-    " if l:err == 0 
-    "   echomsg "failed to stop job"
-    " else 
-    "  echomsg "stopped job"
-    "  let s:job_id = 0
-    "  let s:is_running = 0
-    " endif
   endif
 endfunction
 
 function! s:Stop_Shell() abort
-  if s:is_running == 0
+  let running = jobwait([s:job_id], 0)[0] == -1
+  if running == 0
     echomsg "shell server is not running"
   else 
     echomsg "stopping job of id " . s:job_id
@@ -42,7 +33,6 @@ function! s:Stop_Shell() abort
     else 
       echomsg "stopped job"
       let s:job_id = 0
-      let s:is_running = 0
     endif
   endif
 endfunction

@@ -2,15 +2,22 @@ command! Why3Start call s:StartWhy3Session()
 command! Why3End call s:EndWhy3Session()
 command! StartServer call s:Start_Shell()
 command! StopServer call s:Stop_Shell()
+command! PrintSession call s:Print_Session()
+command! ExitSession call s:Exit_Session()
 
 let s:job_id = 0
+
+function! s:OnEvent(id, data, event) dict
+  let str = join(a:data, "\n")
+  echomsg str
+endfunction
 
 function! s:Start_Shell() abort
   let running = jobwait([s:job_id], 0)[0] == -1
   if running == 1 
     echomsg "shell server already running"
   else
-    let s:job_id = jobstart('./why3 shell hello.why')
+    let s:job_id = jobstart(['./why3', 'shell', 'hello.why'], {'on_stdout': function('s:OnEvent') })
     if s:job_id == 0 
       echomsg "failed to start shell server"
     elseif s:job_id == -1
@@ -37,6 +44,18 @@ function! s:Stop_Shell() abort
   endif
 endfunction
 
+function! s:Print_Session() abort
+  let running = jobwait([s:job_id], 0)[0] == -1
+  if running == 0
+    echomsg "shell server is not running"
+  else 
+    let l:out = chansend(s:job_id, "p\n")
+    if l:out == 0 
+      echomsg "failed to print session" 
+    endif
+  endif
+endfunction
+
 function! s:StartWhy3Session() abort
     if bufexists('[Goal_Panel]') && bufexists('[Log_Panel]')
         echomsg "Why3 sidebar is already active."
@@ -53,15 +72,9 @@ let s:goal_win_id = -1
 let s:log_win_id = -1
 
 function! s:CreateWhy3Window() abort
-    " Create a new vertical split with a truly new, empty buffer
     vnew
-
-    " Move the new window to the far left
     wincmd L
-
-    " Set simple params
-    setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nonumber norelativenumber
-   
+    setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nonumber norelativenumber 
     call append(0, [
             \ 'Why3 Goal Panel',
             \ '',
@@ -72,37 +85,23 @@ function! s:CreateWhy3Window() abort
             \ '        |',
             \ ])
 
-    " Assign name
     execute 'file [Goal_Panel]'
-
     let s:goal_win_id = win_getid()
-
-    " Create a horizontal split for the Log Panel
     new
-
-    " Set simple params
     setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nonumber norelativenumber
-    
     call append(0, [
             \ 'Why3 Log Panel',
             \ '',
             \ 'Log messages:',
             \ '---------------------'])
-
     execute 'file [Log_Panel]'
-    
     let s:log_win_id = win_getid()
-
 endfunction
 
 function! s:GoToWindowById(target_win_id) abort
     let l:target_win_nr = win_id2win(a:target_win_id)
     if l:target_win_nr != 0
-        " Store the current window number so we can potentially return focus later
         let l:current_win_nr = winnr()
-
-        " Switch to the target window using its number, then close it.
-        " We use 'execute' to build and run the command string.
         execute l:target_win_nr . 'wincmd w'
     endif
 endfunction

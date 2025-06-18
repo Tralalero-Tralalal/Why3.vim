@@ -65,7 +65,7 @@ function! s:StartWhy3Session() abort
         return "not_enough_panels" 
     endif
     call s:CreateWhy3Window()
-
+    call s:Start_Shell()
 endfunction
 
 let s:goal_win_id = -1
@@ -115,6 +115,7 @@ function! s:EndWhy3Session() abort
       echomsg "closing log window with id of " . s:log_win_id
         execute s:GoToWindowById(s:log_win_id)
           quit
+          call s:Stop_Shell()
     endif
 endfunction
 

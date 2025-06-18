@@ -1,6 +1,22 @@
 command! Why3Start call s:StartWhy3Session()
 command! Why3End call s:EndWhy3Session()
-command! Whatever echo system('./why3')
+command! Whatever call s:Start_Shell()
+
+let s:is_running = 0
+
+function! s:Start_Shell() abort
+  if s:is_running == 1 
+    echomsg "shell server already running"
+  else
+    let l:err = jobstart('./why3 shell')
+    if l:err == 0 
+      echomsg "failed to start shell server"
+    else  
+      echomsg "started shell with id of " . err
+      let s:is_running = 1
+    endif
+  endif
+endfunction
 
 function! s:StartWhy3Session() abort
     if bufexists('[Goal_Panel]') && bufexists('[Log_Panel]')

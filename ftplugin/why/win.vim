@@ -4,12 +4,61 @@ command! StartServer call s:Start_Shell()
 command! StopServer call s:Stop_Shell()
 command! PrintSession call s:Print_Session()
 command! ExitSession call s:Exit_Session()
+command! TestRegex call s:Regex_test()
 
 let s:job_id = 0
+
+" regex for selected node. gets everything between ** **, not greedy
+" \*\*(.*?)\*\*   \gs global singeline
+
+" regex for goals. gets everything between {}, greedy
+" \{[^}]*\}       \gs global singeline
+
+" regex for first word
+" ^(\S+)
+
+" regex for file name
+" File\s(.*),
+
+" regex for file ID
+" id\s\d+
+
+" regex for Theory name
+" Theory\s+(.*),
+
+" regex for Theory ID
+" id:\s\d+
+
+" SUB REGEXES
+
+" Get goal name from Goal
+" Goal=(.*),
+
+" Get ID of Goal
+"id = (\d+)
+
+" Get parent name of Goal
+" parent=(.*);
+
+" Get data about goal. It'll be a list of 2, the provenness is in the first
+" element, while unknown data is in the 2nd
+" \[.*?\]
+
+function s:Regex_test() abort
+  let myString = "My email is user@example.com."
+  let email = matchstr(myString, '\<\w\+@\w\+\.\w\+\>')
+  echo email
+endfunction
 
 function! s:OnEvent(id, data, event) dict
   let str = join(a:data, "\n")
   echomsg str
+  let theory_name = matchlist(str, '\vFile\s(\S{-}),')
+  if !empty(theory_name)
+    echo theory_name
+  else
+    echomsg "No match found"
+  endif
 endfunction
 
 function! s:Start_Shell() abort

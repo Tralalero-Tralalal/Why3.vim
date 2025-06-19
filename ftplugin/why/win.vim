@@ -60,27 +60,36 @@ function! s:Any_value_is_empty(my_dict) abort
   return 0
 endfunction
 
-function! s:GrabData(str) abort
+function! s:GrabDataPrint(str) abort
   let l:theory = {
     \ 'name': [],
     \ 'id': []
   \}
-  if s:regex_type == "p"
     let l:theory['name'] = matchlist(a:str, '\vFile\s(\S{-}),')
     let l:theory['id'] = matchlist(a:str, '\vid:\s(\d+)')
-  endif
   return l:theory
+endfunction
+
+function! s:GrabData(str) abort 
+  if s:regex_type == "p"
+    return s:GrabDataPrint(a:str)
+  endif
+  return {}
 endfunction
 
 function! s:OnEvent(id, data, event) abort dict
   let str = join(a:data, "\n")
   let new_data = s:GrabData(str)
 
-  if s:Any_value_is_empty(new_data) == 0
-    echo new_data['name']
-    echo new_data['id']
+  if empty(new_data)
+    echomsg "invalid command"
   else
-    echomsg "No match found"
+    if s:Any_value_is_empty(new_data) == 0
+      echo new_data['name']
+      echo new_data['id']
+    else
+      echomsg "No match found"
+    endif
   endif
 endfunction
 

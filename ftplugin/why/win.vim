@@ -4,9 +4,9 @@ command! StartServer call s:Start_Shell()
 command! StopServer call s:Stop_Shell()
 command! PrintSession call s:Print_Session()
 command! ExitSession call s:Exit_Session()
-command! TestRegex call s:Regex_test()
 
 let s:job_id = 0
+let s:regex_type = ""
 
 " regex for selected node. gets everything between ** **, not greedy
 " \*\*(.*?)\*\*   \gs global singeline
@@ -44,18 +44,15 @@ let s:job_id = 0
 " element, while unknown data is in the 2nd
 " \[.*?\]
 
-function s:Regex_test() abort
-  let myString = "My email is user@example.com."
-  let email = matchstr(myString, '\<\w\+@\w\+\.\w\+\>')
-  echo email
-endfunction
-
 function! s:OnEvent(id, data, event) dict
   let str = join(a:data, "\n")
   echomsg str
-  let theory_name = matchlist(str, '\vFile\s(\S{-}),')
+  let l:theory_name = [] 
+  if s:regex_type == "p"
+    let l:theory_name = matchlist(str, '\vFile\s(\S{-}),')
+  endif
   if !empty(theory_name)
-    echo theory_name
+    echo l:theory_name
   else
     echomsg "No match found"
   endif
@@ -103,6 +100,7 @@ function! s:Print_Session() abort
       echomsg "failed to print session" 
     endif
   endif
+  let s:regex_type = "p"
 endfunction
 
 function! s:StartWhy3Session() abort

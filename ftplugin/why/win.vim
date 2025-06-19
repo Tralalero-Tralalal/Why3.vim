@@ -60,19 +60,25 @@ function! s:Any_value_is_empty(my_dict) abort
   return 0
 endfunction
 
-function! s:OnEvent(id, data, event) dict
-  let str = join(a:data, "\n")
+function! s:GrabData(str) abort
   let l:theory = {
     \ 'name': [],
     \ 'id': []
   \}
   if s:regex_type == "p"
-    let l:theory['name'] = matchlist(str, '\vFile\s(\S{-}),')
-    let l:theory['id'] = matchlist(str, '\vid:\s(\d+)')
+    let l:theory['name'] = matchlist(a:str, '\vFile\s(\S{-}),')
+    let l:theory['id'] = matchlist(a:str, '\vid:\s(\d+)')
   endif
-  if s:Any_value_is_empty(l:theory) == 0
-    echo l:theory['name']
-    echo l:theory['id']
+  return l:theory
+endfunction
+
+function! s:OnEvent(id, data, event) abort dict
+  let str = join(a:data, "\n")
+  let new_data = s:GrabData(str)
+
+  if s:Any_value_is_empty(new_data) == 0
+    echo new_data['name']
+    echo new_data['id']
   else
     echomsg "No match found"
   endif

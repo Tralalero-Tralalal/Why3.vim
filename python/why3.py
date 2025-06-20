@@ -32,22 +32,22 @@ def grab_data(s_str):
         try:
             return grab_data_print(s_str)
         except RegexFailure as e:
-            raise FailedToGetData("Error regexing data for print: {e}") from e
+            raise FailedToGetData(f"Error regexing data for print: {e}") from e
         except:
             raise FailedToGetData("Anomalous error in getting data from print")
     elif regex_type == "start":
         return {'start': 'server'}
     else:
-        raise UnavailableCommand("command is not available")
+        raise UnavailableCommand("Command is not available")
 
 def On_Ev(s_str):
     try:
         new_data = grab_data(s_str)
         print(new_data)
     except UnavailableCommand as e:
-        print("ERROR: {e}")
+        print(f"COMMAND ERROR: {e}")
     except FailedToGetData as e:
-        print("ERROR: {e}")
+        print(f"REQ ERROR: {e}")
     except:
         print("Anomalous error")
     

@@ -76,9 +76,9 @@ function! s:Start_Shell() abort
   else
     let s:job_id = jobstart(['./why3', 'shell', 'hello.why'], {'on_stdout': function('s:OnEvent') })
     if s:job_id == 0 
-      echomsg "failed to start shell server"
+      echoerr "Failed to start shell server?"
     elseif s:job_id == -1
-      echomsg "where is the executeable"
+      echoerr "Where is the executeable?"
     else
       echomsg "started shell with id of " . s:job_id
       let s:regex_type = "start"
@@ -89,14 +89,14 @@ endfunction
 function! s:Stop_Shell() abort
   let running = jobwait([s:job_id], 0)[0] == -1
   if running == 0
-    echomsg "shell server is not running"
+    echoerr "Shell server is not running"
   else 
-    echomsg "stopping job of id " . s:job_id
+    echomsg "Stopping job of id " . s:job_id
     let l:err = jobstop(s:job_id)
     if l:err == 0 
-      echomsg "failed to stop job"
+      echoerr "Failed to stop job"
     else 
-      echomsg "stopped job"
+      echomsg "Stopped job"
       let s:job_id = 0
     endif
   endif
@@ -105,14 +105,15 @@ endfunction
 function! s:Print_Session() abort
   let running = jobwait([s:job_id], 0)[0] == -1
   if running == 0
-    echomsg "shell server is not running"
+    echoerr "Shell server is not running"
   else 
     let l:out = chansend(s:job_id, "p\n")
     if l:out == 0 
-      echomsg "failed to print session" 
+      echoerr "Failed to print session" 
+    else 
+      let s:regex_type = "p"
     endif
   endif
-  let s:regex_type = "p"
 endfunction
 
 function! s:StartWhy3Session() abort

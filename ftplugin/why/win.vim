@@ -76,9 +76,9 @@ function! s:Start_Shell() abort
   else
     let s:job_id = jobstart(['./why3', 'shell', 'hello.why'], {'on_stdout': function('s:OnEvent') })
     if s:job_id == 0 
-      echoerr "Failed to start shell server?"
+      throw "Failed to start shell server?"
     elseif s:job_id == -1
-      echoerr "Where is the executeable?"
+      throw "Where is the executeable?"
     else
       echomsg "started shell with id of " . s:job_id
       let s:regex_type = "start"
@@ -89,14 +89,13 @@ endfunction
 function! s:Stop_Shell() abort
   let running = jobwait([s:job_id], 0)[0] == -1
   if running == 0
-    echoerr "Shell server is not running"
+    throw "Shell server is not running"
   else 
     echomsg "Stopping job of id " . s:job_id
     let l:err = jobstop(s:job_id)
     if l:err == 0 
-      echoerr "Failed to stop job"
+      throw "Failed to stop job"
     else 
-      echomsg "Stopped job"
       let s:job_id = 0
     endif
   endif
@@ -105,11 +104,11 @@ endfunction
 function! s:Print_Session() abort
   let running = jobwait([s:job_id], 0)[0] == -1
   if running == 0
-    echoerr "Shell server is not running"
+    throw "Shell server is not running"
   else 
     let l:out = chansend(s:job_id, "p\n")
     if l:out == 0 
-      echoerr "Failed to print session" 
+      throw "Failed to print session" 
     else 
       let s:regex_type = "p"
     endif
@@ -118,24 +117,24 @@ endfunction
 
 function! s:StartWhy3Session() abort
     if bufexists('[Goal_Panel]') && bufexists('[Log_Panel]')
-        echomsg "Why3 sidebar is already active."
-        return "already_started"  
-      elseif bufexists('[Goal_Panel]') || bufexists('[Log_Panel]')
-        echomsg "Make sure to remove all panels before starting a new Session"
-        return "not_enough_panels" 
+      echomsg "Why3 sidebar is already active."
+    elseif bufexists('[Goal_Panel]') || bufexists('[Log_Panel]')
+      echomsg "Make sure to remove all panels before starting a new Session"
+    else 
+      call s:CreateWhy3Window()
     endif
-    call s:CreateWhy3Window()
-    call s:Start_Shell()
 endfunction
 
 let s:goal_win_id = -1
 let s:log_win_id = -1
 
 function! s:CreateWhy3Window() abort
-    vnew
-    wincmd L
-    setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nonumber norelativenumber 
-    call append(0, [
+    try
+      call s:Start_Shell()
+      vnew
+      wincmd L
+      setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nonumber norelativenumber 
+      call append(0, [
             \ 'Why3 Goal Panel',
             \ '',
             \ 'Status:   Goals:',
@@ -145,17 +144,20 @@ function! s:CreateWhy3Window() abort
             \ '        |',
             \ ])
 
-    execute 'file [Goal_Panel]'
-    let s:goal_win_id = win_getid()
-    new
-    setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nonumber norelativenumber
-    call append(0, [
+      execute 'file [Goal_Panel]'
+      let s:goal_win_id = win_getid()
+      new
+      setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nonumber norelativenumber
+      call append(0, [
             \ 'Why3 Log Panel',
             \ '',
             \ 'Log messages:',
             \ '---------------------'])
-    execute 'file [Log_Panel]'
-    let s:log_win_id = win_getid()
+      execute 'file [Log_Panel]'
+      let s:log_win_id = win_getid()
+    catch 
+      echomsg "Failed to start why3 ide: " . v:exception
+    endtry
 endfunction
 
 function! s:GoToWindowById(target_win_id) abort
@@ -166,16 +168,19 @@ function! s:GoToWindowById(target_win_id) abort
     endif
 endfunction
 
-function! s:EndWhy3Session() abort  
-    if bufexists('[Goal_Panel]') && bufexists('[Log_Panel]')
-      echomsg "closing goal window with id of " . s:goal_win_id
-        execute s:GoToWindowById(s:goal_win_id)
-          quit
-
-      echomsg "closing log window with id of " . s:log_win_id
-        execute s:GoToWindowById(s:log_win_id)
-          quit
-          call s:Stop_Shell()
+function! s:EndWhy3Session() abort
+  if bufexists('[Goal_Panel]') && bufexists('[Log_Panel]')
+    echomsg "closing goal window with id of " . s:goal_win_id
+    execute s:GoToWindowById(s:goal_win_id)
+      quit
+    echomsg "closing log window with id of " . s:log_win_id
+      execute s:GoToWindowById(s:log_win_id)
+      quit
     endif
+  try 
+    call s:Stop_Shell()
+  catch
+    echomsg "Failed to stop server: " . v:exception
+  endtry
 endfunction
 

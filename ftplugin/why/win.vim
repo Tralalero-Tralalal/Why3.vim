@@ -73,6 +73,8 @@ endfunction
 function! s:GrabData(str) abort 
   if s:regex_type == "p"
     return s:GrabDataPrint(a:str)
+  elseif s:regex_type == "start"
+    return {'start': ['server']}
   endif
   return {}
 endfunction
@@ -84,12 +86,17 @@ function! s:OnEvent(id, data, event) abort dict
   if empty(new_data)
     echomsg "invalid command"
   else
-    if s:Any_value_is_empty(new_data) == 0
-      echo new_data['name']
-      echo new_data['id']
-    else
-      echomsg "No match found"
-    endif
+      if s:Any_value_is_empty(new_data) == 0
+        if s:regex_type == "p"
+          echo new_data['name']
+          echo new_data['id']
+        elseif s:regex_type == "start"
+        else
+          echomsg "regex_type does not match any"
+        endif
+      else
+        echomsg "Failed to regex"
+      endif
   endif
 endfunction
 
@@ -105,6 +112,7 @@ function! s:Start_Shell() abort
       echomsg "where is the executeable"
     else
       echomsg "started shell with id of " . s:job_id
+      let s:regex_type = "start"
     endif
   endif
 endfunction

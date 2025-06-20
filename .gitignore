@@ -3,3 +3,4 @@ _build/
 hello
 why3.opt
 why3
+python/__pycache__/

@@ -51,6 +51,20 @@ let s:regex_type = ""
 "       { Goal=G3, id = 5; parent=HelloProof; [] [] };
 "       { Goal=G4, id = 6; parent=HelloProof; [] [] }]];
 
+let s:python_dir = expand('<sfile>:p:h:h:h') . '/python'
+
+function! s:Compat(python_dir) abort
+  py3 import vim
+  py3 if not vim.eval('a:python_dir') in sys.path:
+    \    sys.path.insert(0, vim.eval('a:python_dir'))
+  return 1
+endfunction
+
+let s:s = s:Compat(s:python_dir)
+
+py3 print(sys.path)
+py3 from test import Regex
+
 function! s:Any_value_is_empty(my_dict) abort
   for [key, value] in items(a:my_dict)
     if empty(value)
@@ -60,19 +74,9 @@ function! s:Any_value_is_empty(my_dict) abort
   return 0
 endfunction
 
-function! s:GrabDataPrint(str) abort
-  let l:theory = {
-    \ 'name': [],
-    \ 'id': []
-  \}
-    let l:theory['name'] = matchlist(a:str, '\vFile\s(\S{-}),')
-    let l:theory['id'] = matchlist(a:str, '\vid:\s(\d+)')
-  return l:theory
-endfunction
-
 function! s:GrabData(str) abort 
   if s:regex_type == "p"
-    return s:GrabDataPrint(a:str)
+    return py3eval('Regex.grab_data_print(vim.eval("a:str"))')
   elseif s:regex_type == "start"
     return {'start': ['server']}
   endif

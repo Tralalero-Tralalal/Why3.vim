@@ -1,3 +1,14 @@
+
+let s:python_dir = expand('<sfile>:p:h:h:h') . '/python'
+
+function! s:Compat(python_dir) abort
+  py3 import vim
+  py3 if not vim.eval('a:python_dir') in sys.path:
+    \    sys.path.insert(0, vim.eval('a:python_dir'))
+endfunction
+
+call s:Compat(s:python_dir)
+
 command! Why3Start call s:StartWhy3Session()
 command! Why3End call s:EndWhy3Session()
 command! StartServer call s:Start_Shell()
@@ -51,55 +62,11 @@ let s:regex_type = ""
 "       { Goal=G3, id = 5; parent=HelloProof; [] [] };
 "       { Goal=G4, id = 6; parent=HelloProof; [] [] }]];
 
-let s:python_dir = expand('<sfile>:p:h:h:h') . '/python'
-
-function! s:Compat(python_dir) abort
-  py3 import vim
-  py3 if not vim.eval('a:python_dir') in sys.path:
-    \    sys.path.insert(0, vim.eval('a:python_dir'))
-endfunction
-
-call s:Compat(s:python_dir)
-
-py3 from why3 import Regex
-
-function! s:Any_value_is_empty(my_dict) abort
-  for [key, value] in items(a:my_dict)
-    if empty(value)
-      return 1
-    endif
-  endfor
-  return 0
-endfunction
-
-function! s:GrabData(str) abort 
-  if s:regex_type == "p"
-    return py3eval('Regex.grab_data_print(vim.eval("a:str"))')
-  elseif s:regex_type == "start"
-    return {'start': ['server']}
-  endif
-  return {}
-endfunction
+py3 import why3
 
 function! s:OnEvent(id, data, event) abort dict
   let str = join(a:data, "\n")
-  let new_data = s:GrabData(str)
-
-  if empty(new_data)
-    echomsg "invalid command"
-  else
-      if s:Any_value_is_empty(new_data) == 0
-        if s:regex_type == "p"
-          echo new_data['name']
-          echo new_data['id']
-        elseif s:regex_type == "start"
-        else
-          echomsg "regex_type does not match any"
-        endif
-      else
-        echomsg "Failed to regex"
-      endif
-  endif
+  call py3eval('why3.On_Ev(vim.eval("str"))') 
 endfunction
 
 function! s:Start_Shell() abort

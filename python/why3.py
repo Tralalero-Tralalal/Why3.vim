@@ -28,17 +28,20 @@ def grab_data_print(s_str):
 
 def grab_data(s_str):
     regex_type = vim.eval("s:regex_type") 
-    if regex_type == "p":
-        try:
-            return grab_data_print(s_str)
-        except RegexFailure as e:
-            raise FailedToGetData(f"Error regexing data for print: {e}") from e
-        except:
-            raise FailedToGetData("Anomalous error in getting data from print")
-    elif regex_type == "start":
-        return {'start': 'server'}
-    else:
-        raise UnavailableCommand("Command is not available")
+    match regex_type:
+        case "p": 
+            try:
+                return grab_data_print(s_str)
+            except RegexFailure as e:
+                raise FailedToGetData(f"Error regexing data for print: {e}") from e
+            except:
+                raise FailedToGetData("Anomalous error in getting data from print")
+        case "start": 
+            return {'start': 'server'}
+        case "quit":
+            return {'quit': 'server'}
+        case _:
+            raise UnavailableCommand("Command is not available")
 
 def On_Ev(s_str):
     try:

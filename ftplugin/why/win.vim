@@ -90,7 +90,15 @@ function! s:Stop_Shell() abort
   let running = jobwait([s:job_id], 0)[0] == -1
   if running == 0
     throw "Shell server is not running"
-  else 
+  else
+    " Run Quit on the shell
+    let l:out = chansend(s:job_id, "Quit\n")
+    if l:out == 0 
+      throw "Failed to Quit" 
+    else 
+      let s:regex_type = "quit"
+    endif
+    " Stop the job running on vim
     echomsg "Stopping job of id " . s:job_id
     let l:err = jobstop(s:job_id)
     if l:err == 0 
@@ -106,7 +114,8 @@ function! s:Print_Session() abort
   if running == 0
     throw "Shell server is not running"
   else 
-    let l:out = chansend(s:job_id, "p\n")
+    " run p on shell
+    let l:out = pchansend(s:job_id, "p\n")
     if l:out == 0 
       throw "Failed to print session" 
     else 
@@ -170,12 +179,10 @@ endfunction
 
 function! s:EndWhy3Session() abort
   if bufexists('[Goal_Panel]') && bufexists('[Log_Panel]')
-    echomsg "closing goal window with id of " . s:goal_win_id
     execute s:GoToWindowById(s:goal_win_id)
-      quit
-    echomsg "closing log window with id of " . s:log_win_id
-      execute s:GoToWindowById(s:log_win_id)
-      quit
+    quit
+    execute s:GoToWindowById(s:log_win_id)
+    quit
     endif
   try 
     call s:Stop_Shell()

@@ -57,12 +57,10 @@ function! s:Compat(python_dir) abort
   py3 import vim
   py3 if not vim.eval('a:python_dir') in sys.path:
     \    sys.path.insert(0, vim.eval('a:python_dir'))
-  return 1
 endfunction
 
-let s:s = s:Compat(s:python_dir)
+call s:Compat(s:python_dir)
 
-py3 print(sys.path)
 py3 from test import Regex
 
 function! s:Any_value_is_empty(my_dict) abort

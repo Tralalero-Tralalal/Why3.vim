@@ -19,49 +19,6 @@ command! ExitSession call s:Exit_Session()
 let s:job_id = 0
 let s:regex_type = ""
 
-" regex for selected node. gets everything between ** **, not greedy
-" \*\*(.*?)\*\*   \gs global singeline
-
-" regex for goals. gets everything between {}, greedy
-" \{[^}]*\}       \gs global singeline
-
-" regex for first word
-" ^(\S+)
-
-" regex for file name
-" File\s(.*),
-
-" regex for file ID
-" id\s\d+
-
-" regex for Theory name
-" Theory\s+(.*),
-
-" regex for Theory ID
-" \vid:\s\d+
-
-" SUB REGEXES
-
-" Get goal name from Goal
-" Goal=(.*),
-
-" Get ID of Goal
-"id = (\d+)
-
-" Get parent name of Goal
-" parent=(.*);
-
-" Get data about goal. It'll be a list of 2, the provenness is in the first
-" element, while unknown data is in the 2nd
-" \[.*?\]
-
-" root  File hello.why, id 1;
-"     [ Theory HelloProof, id: 2;
-"       [{ Goal=G1, id = 3; parent=HelloProof; [] [] };
-"       { Goal=G2, id = 4; parent=HelloProof; [] [] };
-"       { Goal=G3, id = 5; parent=HelloProof; [] [] };
-"       { Goal=G4, id = 6; parent=HelloProof; [] [] }]];
-
 py3 import why3
 
 function! s:OnEvent(id, data, event) abort dict
@@ -115,11 +72,11 @@ function! s:Print_Session() abort
     throw "Shell server is not running"
   else 
     " run p on shell
-    let l:out = pchansend(s:job_id, "p\n")
+    let l:out = chansend(s:job_id, "p\n")
     if l:out == 0 
       throw "Failed to print session" 
     else 
-      let s:regex_type = "p"
+      let s:regex_type = "g"
     endif
   endif
 endfunction

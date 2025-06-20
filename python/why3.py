@@ -1,7 +1,5 @@
 import re, vim
-
 class Regex:
-
     def grab_data_print(s_str):
         theory = {
             'name': [],

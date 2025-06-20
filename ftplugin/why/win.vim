@@ -61,7 +61,7 @@ endfunction
 
 call s:Compat(s:python_dir)
 
-py3 from test import Regex
+py3 from why3 import Regex
 
 function! s:Any_value_is_empty(my_dict) abort
   for [key, value] in items(a:my_dict)

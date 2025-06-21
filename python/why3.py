@@ -78,38 +78,6 @@ class Session:
 #       { Goal=G3, id = 5; parent=HelloProof; [] [] };
 #       { Goal=G4, id = 6; parent=HelloProof; [] [] }]];
 
-def grab_session(s_str):
-    sess_match = re.search(r"^(\S+)", s_str)
-    if sess_match:
-        sess = sess_match.group(0)
-        return sess
-    else:
-        raise RegexFailure("Failed to grab session")
-
-def grab_theories(s_str):
-    names_match = re.findall(r"Theory\s(.*),", s_str)
-    ids_match = re.findall(r"id:\s(\d+)", s_str)
-    theories = []
-    for name, id in zip(names_match, ids_match):
-        theories.append(Theory(id, name, []).__dict__)
-    return theories
-
-def grab_goals(s_str):
-    goals_str = re.findall(r"{[^}]*}", s_str)
-    goals = []
-    for goal in goals_str:
-        match_name = re.search(r"Goal=(.*),", goal)
-        if match_name:
-            name = match_name.group(1)
-        match_id = re.search(r"id = (\d+)", goal)
-        if match_id:
-            id = match_id.group(1)
-        match_parent = re.search(r"parent=(.*);", goal)
-        if match_parent:
-            parent = match_parent.group(1)
-        goals.append(Goal(name, id, parent, []).__dict__)
-    return goals
-
 def grab_selected_goal(s_str):
     # Get selected goal, greedy
     selected_goal_str = re.search(r"\*\*(.*?)\*\*", s_str)
@@ -126,22 +94,74 @@ def grab_selected_goal(s_str):
         parent = match_parent.group(1)
     return Goal(name, id, parent, []).__dict__
 
+def grab_goals(s_str):
+    goals_str = re.findall(r"{[^}]*}", s_str)
+    goals = []
+    for goal in goals_str:
+        match_name = re.search(r"Goal=(.*),", goal)
+        if match_name:
+            name = match_name.group(1)
+            match_id = re.search(r"id = (\d+)", goal)
+            if match_id:
+                id = match_id.group(1)
+                match_parent = re.search(r"parent=(.*);", goal)
+                if match_parent:
+                    parent = match_parent.group(1)
+                    goals.append(Goal(name, id, parent, []).__dict__)
+                else:
+                    raise RegexFailure("Failed to regex parent in goal")
+            else:
+                raise RegexFailure("Failed to regex id in goal")
+        else:
+            raise RegexFailure("Failed to regex name in goal")
+    return goals
+
+def grab_theories(s_str):
+    theories_str = re.findall(r"Theory (.*?)(?= Theory|$)", s_str)
+    theories = []
+    for theory in theories_str:
+        name_match = re.search(r"^(\S+),", theory)
+        if name_match:
+            name = name_match.group(1)
+            id_match = re.search(r"id:\s(\d+)", theory)
+            if id_match:
+                id = id_match.group(1)
+                goals = grab_goals(theory)
+                theories.append(Theory(id, name, goals).__dict__)
+                return theories 
+            else:
+                raise RegexFailure("Failed to regex id in theory")
+        else:
+            raise RegexFailure("Failed to regex name in theory")
+
 def grab_files(s_str):
     names_match = re.findall(r"File\s(.*?)," , s_str)
     # Check if names_match is empty, raise an error if it is
     if not names_match:
-        raise RegexFailure("Failed to regex names, Check to see whether the regex is valid or the output changed")
+        raise RegexFailure("Failed to regex name in file, Check to see whether the regex is valid or the output changed")
     ids_match = re.findall(r"id\s(\d+)" , s_str)
     # Check if ids_match is empty, raise an error if it is
     if not ids_match:
-        raise RegexFailure("Failed to regex ids, Check to see whether the regex is valid or the output changed")
+        raise RegexFailure("Failed to regex id in file, Check to see whether the regex is valid or the output changed")
     # Check if the length is equal
-    if length(names_match) == length(ids_match):
+    if len(names_match) != len(ids_match):
         raise RegexFailure("Unequality in regex of id and names")
     files = []
     for name_match, id_match in zip(names_match, ids_match):
-        files.append(File(id_match, name_match, []).__dict__)
+        files.append(File(id_match, name_match, grab_theories(s_str)).__dict__)
     return files
+
+def grab_session(s_str):
+    sess_match = re.search(r"^(\S+)", s_str)
+    if sess_match:
+        sess = sess_match.group(0)
+        try:
+            files = grab_files(s_str)
+            return Session(sess, files)
+        except Exception as e:
+            raise FailedToGetData(f"Failed to grab data in session: {e}")
+    else:
+        raise RegexFailure("Failed to grab session")
 
 def grab_data(s_str):
     regex_type = vim.eval("s:regex_type") 

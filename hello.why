@@ -8,6 +8,9 @@ theory HelloProof
   use int.Int
 
   goal G3: forall x:int. x * x >= 0
-  
-  goal G4: true
+end
+
+
+theory Ex
+  goal Bruh: true
 end

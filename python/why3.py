@@ -27,6 +27,7 @@ class Theory:
 @dataclass
 class File:
     id: int
+    name: str
     Theories: List[Theory] = field(default_factory=list) 
 
 @dataclass
@@ -77,6 +78,14 @@ class Session:
 #       { Goal=G3, id = 5; parent=HelloProof; [] [] };
 #       { Goal=G4, id = 6; parent=HelloProof; [] [] }]];
 
+def grab_theories(s_str):
+    names_match = re.findall(r"Theory\s(.*),", s_str)
+    ids_match = re.findall(r"id:\s(\d+)", s_str)
+    theories = []
+    for name, id in zip(names_match, ids_match):
+        theories.append(Theory(id, name, []).__dict__)
+    return theories
+
 def grab_goals(s_str):
     goals_str = re.findall("{[^}]*}", s_str)
     goals = []
@@ -93,33 +102,33 @@ def grab_goals(s_str):
         goals.append(Goal(name, id, parent, []).__dict__)
     return goals
 
-def grab_data_print(s_str):
-    theory = {
-        'name': "",
-        'id': "" 
-    } 
-    name_match = re.search("File\\s(.*?)," , s_str)
-    if name_match: 
-        theory['name'] = name_match.group(1)
-    else:
-        raise RegexFailure("Failed to regex name")
-    id_match = re.search("id:\\s(\\d+)" , s_str)
-    if id_match:
-        theory['id'] = id_match.group(1)
-    else: 
-        raise RegexFailure("Failed to regex id")
-    return theory
+def grab_files(s_str):
+    names_match = re.findall(r"File\s(.*?)," , s_str)
+    # Check if names_match is empty, raise an error if it is
+    if not names_match:
+        raise RegexFailure("Failed to regex names, Check to see whether the regex is valid or the output changed")
+    ids_match = re.findall(r"id\s(\d+)" , s_str)
+    # Check if ids_match is empty, raise an error if it is
+    if not ids_match:
+        raise RegexFailure("Failed to regex ids, Check to see whether the regex is valid or the output changed")
+    # Check if the length is equal
+    if length(names_match) == length(ids_match):
+        raise RegexFailure("Unequality in regex of id and names")
+    files = []
+    for name_match, id_match in zip(names_match, ids_match):
+        files.append(File(id_match, name_match, []).__dict__)
+    return files
 
 def grab_data(s_str):
     regex_type = vim.eval("s:regex_type") 
     match regex_type:
         case "p": 
             try:
-                return grab_data_print(s_str)
+                return grab_theories(s_str)
             except RegexFailure as e:
                 raise FailedToGetData(f"Error regexing data for print: {e}") from e
-            except:
-                raise FailedToGetData("Anomalous error in getting data from print")
+            except Exception as e:
+                raise FailedToGetData(f"Anomalous error in getting file data: {type(e).__name__}: {e}")
         case "g":
             return grab_goals(s_str)
         case "start": 

@@ -76,7 +76,7 @@ function! s:Print_Session() abort
     if l:out == 0 
       throw "Failed to print session" 
     else 
-      let s:regex_type = "g"
+      let s:regex_type = "p"
     endif
   endif
 endfunction

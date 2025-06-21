@@ -11,6 +11,9 @@ class RegexFailure(Exception):
 class FailedToGetData(Exception):
     pass
 
+class NoNodeAvailable(Exception):
+    pass
+
 @dataclass
 class Goal:
     Name: str
@@ -81,18 +84,26 @@ class Session:
 def grab_selected_goal(s_str):
     # Get selected goal, greedy
     selected_goal_str = re.search(r"\*\*(.*?)\*\*", s_str)
+    if not selected_goal_str:
+        raise NoNodeAvailable("There is no goal selected")
 
     # get specific parts of the goal 
     match_name = re.search(r"Goal=(.*),", selected_goal_str.group(0))
     if match_name:
         name = match_name.group(1)
-    match_id = re.search(r"id = (\d+)", selected_goal_str.group(0))
-    if match_id:
-        id = match_id.group(1)
-    match_parent = re.search(r"parent=(.*);", selected_goal_str.group(0))
-    if match_parent:
-        parent = match_parent.group(1)
-    return Goal(name, id, parent, []).__dict__
+        match_id = re.search(r"id = (\d+)", selected_goal_str.group(0))
+        if match_id:
+            id = match_id.group(1)
+            match_parent = re.search(r"parent=(.*);", selected_goal_str.group(0))
+            if match_parent:
+                parent = match_parent.group(1)
+                return Goal(name, id, parent, []).__dict__
+            else:
+                raise RegexFailure("Failed to regex parent in selected goal")
+        else:
+            raise RegexFailure("Failed to regex id in selected  goal")
+    else:
+        raise RegexFailure("Failed to regex name in selected goal")
 
 def grab_goals(s_str):
     goals_str = re.findall(r"{[^}]*}", s_str)
@@ -172,9 +183,7 @@ def grab_data(s_str):
             except RegexFailure as e:
                 raise FailedToGetData(f"Error regexing data for print: {e}") from e
             except Exception as e:
-                raise FailedToGetData(f"Anomalous error in getting file data: {type(e).__name__}: {e}")
-        case "g":
-            return grab_goals(s_str)
+                raise e
         case "start": 
             return {'start': 'server'}
         case "quit":

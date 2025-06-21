@@ -78,6 +78,14 @@ class Session:
 #       { Goal=G3, id = 5; parent=HelloProof; [] [] };
 #       { Goal=G4, id = 6; parent=HelloProof; [] [] }]];
 
+def grab_session(s_str):
+    sess_match = re.search(r"^(\S+)", s_str)
+    if sess_match:
+        sess = sess_match.group(0)
+        return sess
+    else:
+        raise RegexFailure("Failed to grab session")
+
 def grab_theories(s_str):
     names_match = re.findall(r"Theory\s(.*),", s_str)
     ids_match = re.findall(r"id:\s(\d+)", s_str)
@@ -87,20 +95,36 @@ def grab_theories(s_str):
     return theories
 
 def grab_goals(s_str):
-    goals_str = re.findall("{[^}]*}", s_str)
+    goals_str = re.findall(r"{[^}]*}", s_str)
     goals = []
     for goal in goals_str:
-        match_name = re.search("Goal=(.*),", goal)
-        match_id = re.search(r"id = (\d+)", goal)
-        match_parent = re.search(r"parent=(.*);", goal)
+        match_name = re.search(r"Goal=(.*),", goal)
         if match_name:
             name = match_name.group(1)
+        match_id = re.search(r"id = (\d+)", goal)
         if match_id:
             id = match_id.group(1)
+        match_parent = re.search(r"parent=(.*);", goal)
         if match_parent:
             parent = match_parent.group(1)
         goals.append(Goal(name, id, parent, []).__dict__)
     return goals
+
+def grab_selected_goal(s_str):
+    # Get selected goal, greedy
+    selected_goal_str = re.search(r"\*\*(.*?)\*\*", s_str)
+
+    # get specific parts of the goal 
+    match_name = re.search(r"Goal=(.*),", selected_goal_str.group(0))
+    if match_name:
+        name = match_name.group(1)
+    match_id = re.search(r"id = (\d+)", selected_goal_str.group(0))
+    if match_id:
+        id = match_id.group(1)
+    match_parent = re.search(r"parent=(.*);", selected_goal_str.group(0))
+    if match_parent:
+        parent = match_parent.group(1)
+    return Goal(name, id, parent, []).__dict__
 
 def grab_files(s_str):
     names_match = re.findall(r"File\s(.*?)," , s_str)
@@ -124,7 +148,7 @@ def grab_data(s_str):
     match regex_type:
         case "p": 
             try:
-                return grab_theories(s_str)
+                return grab_session(s_str)
             except RegexFailure as e:
                 raise FailedToGetData(f"Error regexing data for print: {e}") from e
             except Exception as e:

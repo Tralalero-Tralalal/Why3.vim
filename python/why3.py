@@ -38,48 +38,7 @@ class Session:
     sess_name: str
     Files: List[File] = field(default_factory=list) 
 
-# regex for selected node. gets everything between ** **, not greedy
-# \*\*(.*?)\*\*   \gs global singeline
-#
-# regex for goals. gets everything between {}, greedy
-# \{[^}]*\}       \gs global singeline
-#
-# regex for first word
-# ^(\S+)
-#
-# regex for file name
-# File\s(.*),
-#
-# regex for file ID
-# id\s\d+
-#
-# regex for Theory name
-# Theory\s+(.*),
-#
-# regex for Theory ID
-# \vid:\s\d+
-#
-# SUB REGEXES
-#
-# Get goal name from Goal
-# Goal=(.*),
-#
-# Get ID of Goal
-# id = (\d+)
-#
-# Get parent name of Goal
-# parent=(.*);
-#
-# Get data about goal. It'll be a list of 2, the provenness is in the first
-# element, while unknown data is in the 2nd
-# \[.*?\]
-#
-# root  File hello.why, id 1;
-#     [ Theory HelloProof, id: 2;
-#       [{ Goal=G1, id = 3; parent=HelloProof; [] [] };
-#       { Goal=G2, id = 4; parent=HelloProof; [] [] };
-#       { Goal=G3, id = 5; parent=HelloProof; [] [] };
-#       { Goal=G4, id = 6; parent=HelloProof; [] [] }]];
+num_of_nodes = 0
 
 def grab_selected_goal(s_str):
     # Get selected goal, greedy
@@ -108,6 +67,7 @@ def grab_selected_goal(s_str):
 def grab_goals(s_str, n=None):
     goals_str = re.findall(r"{[^}]*}", s_str)
     if n is not None:
+        global num_of_nodes
         num_of_nodes = n + len(goals_str)
         return num_of_nodes
     else:
@@ -134,6 +94,7 @@ def grab_goals(s_str, n=None):
 def grab_theories(s_str, n=None):
     theories_str = re.findall(r"(Theory\s.*?)(?= Theory|$)", s_str, re.DOTALL)
     if n is not None:
+        global num_of_nodes
         num_of_nodes = n + len(theories_str)
         return grab_goals(s_str, num_of_nodes)
     else:
@@ -157,6 +118,7 @@ def grab_theories(s_str, n=None):
 def grab_files(s_str, n=None):
     names_match = re.findall(r"File\s(.*?)," , s_str)
     if n is not None:
+        global num_of_nodes 
         num_of_nodes = len(names_match)
         return grab_theories(s_str, num_of_nodes)
 
@@ -187,10 +149,12 @@ def grab_session(s_str):
     else:
         raise RegexFailure("Failed to grab session")
 
-#def sel_node_num = 0
-#def next_node():
-#    sel_node_num++;
-#    return "On node: " node_num
+sel_node_num = 0
+def next_node():
+    global sel_node_num 
+    sel_node_num = (sel_node_num + 1) % (num_of_nodes + 1)
+    s = f"On node: {sel_node_num}"
+    return s
 
 def grab_data(s_str):
     regex_type = vim.eval("s:regex_type") 
@@ -204,7 +168,7 @@ def grab_data(s_str):
                 raise e
         case "ng":
             try:
-               return grab_selected_goal(s_str) 
+               return next_node()
             except Exception as e:
                 raise e
         case "start": 

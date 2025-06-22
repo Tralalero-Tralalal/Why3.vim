@@ -16,40 +16,26 @@ command! StopServer call s:Stop_Shell()
 command! PrintSession call s:Print_Session()
 command! NextNode call s:Next_Node()
 command! ExitSession call s:Exit_Session()
-command! RefreshSession call s:Refresh_Session()
+command! InitializeSession call s:Initialize_Session()
 
 let s:job_id = 0
 let s:regex_type = ""
 
 py3 import why3
 
-function! s:OnEvent(id, data, event) abort dict
+function! s:OnStdout(id, data, event) abort dict
   let str = join(a:data, "\n")
   call py3eval('why3.On_Ev(vim.eval("str"))') 
 endfunction
 
-function! s:Refresh_Session() abort
-  let running = jobwait([s:job_id], 0)[0] == -1
-  if running == 0
-    throw "Shell server is not running"
-  else 
-    " run p on shell
-    let s:regex_type = "initialize"
-    let l:out = chansend(s:job_id, "p\n")
-    if l:out == 0 
-      throw "Failed to initialize session" 
-    else 
-    endif
-  endif
-endfunction
-
+" Start the shell server
 function! s:Start_Shell() abort
   let running = jobwait([s:job_id], 0)[0] == -1
   if running == 1 
     echomsg "shell server already running"
   else
     let s:regex_type = "start"
-    let s:job_id = jobstart(['./why3', 'shell', 'hello.why'], {'on_stdout': function('s:OnEvent') })
+    let s:job_id = jobstart(['./why3', 'shell', 'hello.why'], {'on_stdout': function('s:OnStdout') })
     if s:job_id == 0 
       throw "Failed to start shell server?"
     elseif s:job_id == -1
@@ -60,6 +46,7 @@ function! s:Start_Shell() abort
   endif
 endfunction
 
+" Stop the shell server
 function! s:Stop_Shell() abort
   let running = jobwait([s:job_id], 0)[0] == -1
   if running == 0
@@ -94,6 +81,21 @@ function! s:Print_Session() abort
       throw "Failed to print session" 
     else 
       let s:regex_type = "p"
+    endif
+  endif
+endfunction
+
+function! s:Initialize_Session() abort
+  let running = jobwait([s:job_id], 0)[0] == -1
+  if running == 0
+    throw "Shell server is not running"
+  else 
+    " run p on shell
+    let s:regex_type = "initialize"
+    let l:out = chansend(s:job_id, "p\n")
+    if l:out == 0 
+      throw "Failed to initialize session" 
+    else 
     endif
   endif
 endfunction

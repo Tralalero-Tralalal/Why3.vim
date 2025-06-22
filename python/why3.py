@@ -172,7 +172,7 @@ def grab_data(s_str):
             except Exception as e:
                 raise e
         case "start": 
-            return {'start': "session" }
+            return "Please wait for server to initialize"
         case "quit":
             return {'quit': 'server'}
         case "initialize":

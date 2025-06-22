@@ -16,7 +16,6 @@ command! StopServer call s:Stop_Shell()
 command! PrintSession call s:Print_Session()
 command! NextNode call s:Next_Node()
 command! ExitSession call s:Exit_Session()
-command! InitializeSession call s:Initialize_Session()
 
 let s:job_id = 0
 let s:regex_type = ""
@@ -26,6 +25,21 @@ py3 import why3
 function! s:OnStdout(id, data, event) abort dict
   let str = join(a:data, "\n")
   call py3eval('why3.On_Ev(vim.eval("str"))') 
+endfunction
+
+function! s:Initialize_Session(timer_id) abort
+  let running = jobwait([s:job_id], 0)[0] == -1
+  if running == 0
+    throw "Shell server is not running"
+  else 
+    " run p on shell
+    let s:regex_type = "initialize"
+    let l:out = chansend(s:job_id, "p\n")
+    if l:out == 0 
+      throw "Failed to initialize session" 
+    else 
+    endif
+  endif
 endfunction
 
 " Start the shell server
@@ -42,6 +56,8 @@ function! s:Start_Shell() abort
       throw "Where is the executeable?"
     else
       echomsg "started shell with id of " . s:job_id
+      let timer_id = timer_start(2000, 's:Initialize_Session')
+      echomsg "Timer started with ID: " . timer_id
     endif
   endif
 endfunction
@@ -81,21 +97,6 @@ function! s:Print_Session() abort
       throw "Failed to print session" 
     else 
       let s:regex_type = "p"
-    endif
-  endif
-endfunction
-
-function! s:Initialize_Session() abort
-  let running = jobwait([s:job_id], 0)[0] == -1
-  if running == 0
-    throw "Shell server is not running"
-  else 
-    " run p on shell
-    let s:regex_type = "initialize"
-    let l:out = chansend(s:job_id, "p\n")
-    if l:out == 0 
-      throw "Failed to initialize session" 
-    else 
     endif
   endif
 endfunction

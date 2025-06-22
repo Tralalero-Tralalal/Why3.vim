@@ -15,11 +15,23 @@ class NoNodeAvailable(Exception):
     pass
 
 @dataclass
+class Prover:
+    name: str
+    version: str
+
+@dataclass
+class Status:
+    succeeded: bool
+    time: float
+    steps: int
+    prover: Prover
+
+@dataclass
 class Goal:
     Name: str
     id: int
     parent: str
-    Status: List[str] 
+    status: List[Status] 
 
 @dataclass
 class Theory:
@@ -64,6 +76,44 @@ def grab_selected_goal(s_str):
     else:
         raise RegexFailure("Failed to regex name in selected goal")
 
+def grab_success(s_str):
+    if re.search(r"Valid", s_str):
+        return True
+    else:
+        return False
+
+def grab_status(s_str):
+    if s_str:
+        match_prover_name = re.search(r"^(\S+)", s_str)
+        if match_prover_name:
+            prover_name = match_prover_name.group(0)
+            match_version = re.search(r"^\S+\s+(\S+)", s_str)
+            if match_version:
+                version = match_version.group(0)
+                prover = Prover(prover_name, version)
+                succeeded = grab_success(s_str)
+                time_data = re.search(r"(\(\d+\.\d+s,\s*\d+\s*steps\))", s_str)
+                if time_data:
+                    match_time = re.search(r"^(\S+),", time_data.group(1))
+                    if match_time:
+                        time = match_time.group(1)
+                        match_steps = re.search(r",\s(\d+)", time_data.group(1))
+                        if match_steps:
+                            steps = match_steps.group(1)
+                            return [Status(succeeded, time, steps, prover)]
+                        else:
+                            raise RegexFailure("Failed to steps in status")
+                    else:
+                        raise RegexFailure("Failed to regex time in status")
+                else:
+                    raise RegexFailure("Failed to regex time_data in status")
+            else:
+                raise RegexFailure("Failed to regex version in status")
+        else:
+            raise RegexFailure("Failed to regex prover_name in status")
+    else:
+        return []
+
 def grab_goals(s_str, n=None):
     goals_str = re.findall(r"{[^}]*}", s_str)
     if n is not None:
@@ -82,7 +132,13 @@ def grab_goals(s_str, n=None):
                     match_parent = re.search(r"parent=(.*);", goal)
                     if match_parent:
                         parent = match_parent.group(1)
-                        goals.append(Goal(name, id, parent, []).__dict__)
+                        match_other = re.search(r"\[(.*?)\]", goal)
+                        if match_other:
+                            other = match_other.group(1)
+                            status = grab_status(other)
+                            goals.append(Goal(name, id, parent, status).__dict__)
+                        else:
+                            raise RegexFailure("Failed to regex other in goal")
                     else:
                         raise RegexFailure("Failed to regex parent in goal")
                 else:

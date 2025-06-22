@@ -24,7 +24,7 @@ py3 import why3
 
 function! s:OnStdout(id, data, event) abort dict
   let str = join(a:data, "\n")
-  call py3eval('why3.On_Ev(vim.eval("str"))') 
+  call py3eval('why3.On_Ev("root  File hello.why, id 1; [ Theory HelloProof, id: 2; [P{ Goal=G1, id = 3; parent=HelloProof; [Alt-Ergo 2.6.2 Valid (0.01s, 0 steps)] [] }; **{ Goal=G2, id = 4; parent=HelloProof; [Alt-Ergo 2.6.2 Unknown (unknown) (0.01s, 2 steps)] [] } **; { Goal=G3, id = 5; parent=HelloProof; [] [] }];Theory Ex, id: 6; [{ Goal=Bruh, id = 7; parent=Ex; [] [] }]];")') 
 endfunction
 
 function! s:Initialize_Session(timer_id) abort

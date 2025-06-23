@@ -50,6 +50,19 @@ class Session:
     sess_name: str
     Files: List[File] = field(default_factory=list) 
 
+def find_greatest_id(session):
+    greatest_id = 0
+    for file in session.Files:
+        if greatest_id < file.id:
+            greatest_id = file.id
+            for theory in file.Theories:
+                if greatest_id < theory.id:
+                    greatest_id = theory.id
+                    for goal in theory.Goals:
+                        if greatest_id < goal.id:
+                            greatest_id = goal.id
+    return greatest_id
+
 num_of_nodes = 0
 
 def grab_selected_goal(s_str):
@@ -68,7 +81,7 @@ def grab_selected_goal(s_str):
             match_parent = re.search(r"parent=(.*);", selected_goal_str.group(0))
             if match_parent:
                 parent = match_parent.group(1)
-                return Goal(name, id, parent, []).__dict__
+                return Goal(name, int(id), parent, [])
             else:
                 raise RegexFailure("Failed to regex parent in selected goal")
         else:
@@ -90,7 +103,7 @@ def grab_status(s_str):
             match_version = re.search(r"^\S+\s+(\S+)", s_str)
             if match_version:
                 version = match_version.group(0)
-                prover = Prover(prover_name, version).__dict__
+                prover = Prover(prover_name, version)
                 succeeded = grab_success(s_str)
                 time_data = re.search(r"(\(\d+\.\d+s,\s*\d+\s*steps\))", s_str)
                 if time_data:
@@ -100,7 +113,7 @@ def grab_status(s_str):
                         match_steps = re.search(r",\s(\d+)", time_data.group(1))
                         if match_steps:
                             steps = match_steps.group(1)
-                            return [Status(succeeded, time, steps, prover).__dict__]
+                            return [Status(succeeded, time, steps, prover)]
                         else:
                             raise RegexFailure("Failed to steps in status")
                     else:
@@ -114,84 +127,67 @@ def grab_status(s_str):
     else:
         return []
 
-def grab_goals(s_str, n=None):
+def grab_goals(s_str):
     goals_str = re.findall(r"{[^}]*}", s_str)
-    if n is not None:
-        global num_of_nodes
-        num_of_nodes = n + len(goals_str)
-        return num_of_nodes
-    else:
-        goals = []
-        for goal in goals_str:
-            match_name = re.search(r"Goal=(.*),", goal)
-            if match_name:
-                name = match_name.group(1)
-                match_id = re.search(r"id = (\d+)", goal)
-                if match_id:
-                    id = match_id.group(1)
-                    match_parent = re.search(r"parent=(.*);", goal)
-                    if match_parent:
-                        parent = match_parent.group(1)
-                        match_other = re.search(r"\[(.*?)\]", goal)
-                        if match_other:
-                            other = match_other.group(1)
-                            status = grab_status(other)
-                            goals.append(Goal(name, id, parent, status).__dict__)
-                        else:
-                            raise RegexFailure("Failed to regex other in goal")
+    goals = []
+    for goal in goals_str:
+        match_name = re.search(r"Goal=(.*),", goal)
+        if match_name:
+            name = match_name.group(1)
+            match_id = re.search(r"id = (\d+)", goal)
+            if match_id:
+                id = match_id.group(1)
+                match_parent = re.search(r"parent=(.*);", goal)
+                if match_parent:
+                    parent = match_parent.group(1)
+                    match_other = re.search(r"\[(.*?)\]", goal)
+                    if match_other:
+                        other = match_other.group(1)
+                        status = grab_status(other)
+                        goals.append(Goal(name, int(id), parent, status))
                     else:
-                        raise RegexFailure("Failed to regex parent in goal")
+                        raise RegexFailure("Failed to regex other in goal")
                 else:
-                    raise RegexFailure("Failed to regex id in goal")
+                    raise RegexFailure("Failed to regex parent in goal")
             else:
-                raise RegexFailure("Failed to regex name in goal")
-        return goals
+                raise RegexFailure("Failed to regex id in goal")
+        else:
+            raise RegexFailure("Failed to regex name in goal")
+    return goals
 
-def grab_theories(s_str, n=None):
+def grab_theories(s_str):
     theories_str = re.findall(r"(Theory\s.*?)(?= Theory|$)", s_str, re.DOTALL)
-    if n is not None:
-        global num_of_nodes
-        num_of_nodes = n + len(theories_str)
-        return grab_goals(s_str, num_of_nodes)
-    else:
-
-        theories = []
-        for theory in theories_str:
-            name_match = re.search(r"Theory\s+(.*),", theory)
-            if name_match:
-                name = name_match.group(1)
-                id_match = re.search(r"id:\s(\d+)", theory)
-                if id_match:
-                    id = id_match.group(1)
-                    goals = grab_goals(theory)
-                    theories.append(Theory(id, name, goals).__dict__)
-                else:
-                    raise RegexFailure("Failed to regex id in theory")
+    theories = []
+    for theory in theories_str:
+        name_match = re.search(r"Theory\s+(.*),", theory)
+        if name_match:
+            name = name_match.group(1)
+            id_match = re.search(r"id:\s(\d+)", theory)
+            if id_match:
+                id = id_match.group(1)
+                goals = grab_goals(theory)
+                theories.append(Theory(int(id), name, goals))
             else:
-                raise RegexFailure("Failed to regex name in theory")
-        return theories
+                raise RegexFailure("Failed to regex id in theory")
+        else:
+            raise RegexFailure("Failed to regex name in theory")
+    return theories
 
-def grab_files(s_str, n=None):
+def grab_files(s_str):
     names_match = re.findall(r"File\s(.*?)," , s_str)
-    if n is not None:
-        global num_of_nodes 
-        num_of_nodes = len(names_match)
-        return grab_theories(s_str, num_of_nodes)
-
-    else:# Check if names_match is empty, raise an error if it is
-        if not names_match:
-            raise RegexFailure("Failed to regex name in file, Check to see whether the regex is valid or the output changed")
-        ids_match = re.findall(r"id\s(\d+)" , s_str)
-        # Check if ids_match is empty, raise an error if it is
-        if not ids_match:
-            raise RegexFailure("Failed to regex id in file, Check to see whether the regex is valid or the output changed")
-        # Check if the length is equal
-        if len(names_match) != len(ids_match):
-            raise RegexFailure("Unequality in regex of id and names")
-        files = []
-        for name_match, id_match in zip(names_match, ids_match):
-            files.append(File(id_match, name_match, grab_theories(s_str)).__dict__)
-        return files
+    if not names_match:
+        raise RegexFailure("Failed to regex name in file, Check to see whether the regex is valid or the output changed")
+    ids_match = re.findall(r"id\s(\d+)" , s_str)
+    # Check if ids_match is empty, raise an error if it is
+    if not ids_match:
+        raise RegexFailure("Failed to regex id in file, Check to see whether the regex is valid or the output changed")
+    # Check if the length is equal
+    if len(names_match) != len(ids_match):
+        raise RegexFailure("Unequality in regex of id and names")
+    files = []
+    for name_match, id_match in zip(names_match, ids_match):
+        files.append(File(int(id_match), name_match, grab_theories(s_str)))
+    return files
 
 def grab_session(s_str):
     sess_match = re.search(r"^(\S+)", s_str)
@@ -232,7 +228,7 @@ def grab_data(s_str):
         case "quit":
             return {'quit': 'server'}
         case "initialize":
-            num_of_nodes = grab_files(s_str, 0)
+            num_of_nodes = find_greatest_id(grab_session(s_str))
             s = "initialized with x nodes: ", num_of_nodes
             return { 'server': s }
         case _:

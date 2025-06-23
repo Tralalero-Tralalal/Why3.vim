@@ -228,6 +228,7 @@ def grab_data(s_str):
         case "quit":
             return {'quit': 'server'}
         case "initialize":
+            global num_of_nodes
             num_of_nodes = find_greatest_id(grab_session(s_str))
             s = "initialized with x nodes: ", num_of_nodes
             return { 'server': s }

@@ -90,7 +90,7 @@ def grab_status(s_str):
             match_version = re.search(r"^\S+\s+(\S+)", s_str)
             if match_version:
                 version = match_version.group(0)
-                prover = Prover(prover_name, version)
+                prover = Prover(prover_name, version).__dict__
                 succeeded = grab_success(s_str)
                 time_data = re.search(r"(\(\d+\.\d+s,\s*\d+\s*steps\))", s_str)
                 if time_data:
@@ -100,7 +100,7 @@ def grab_status(s_str):
                         match_steps = re.search(r",\s(\d+)", time_data.group(1))
                         if match_steps:
                             steps = match_steps.group(1)
-                            return [Status(succeeded, time, steps, prover)]
+                            return [Status(succeeded, time, steps, prover).__dict__]
                         else:
                             raise RegexFailure("Failed to steps in status")
                     else:

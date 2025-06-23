@@ -94,7 +94,7 @@ def grab_status(s_str):
                 succeeded = grab_success(s_str)
                 time_data = re.search(r"(\(\d+\.\d+s,\s*\d+\s*steps\))", s_str)
                 if time_data:
-                    match_time = re.search(r"^(\S+),", time_data.group(1))
+                    match_time = re.search(r"^\((\S+),", time_data.group(1))
                     if match_time:
                         time = match_time.group(1)
                         match_steps = re.search(r",\s(\d+)", time_data.group(1))

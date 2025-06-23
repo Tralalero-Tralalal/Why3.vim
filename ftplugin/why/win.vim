@@ -16,6 +16,7 @@ command! StopServer call s:Stop_Shell()
 command! PrintSession call s:Print_Session()
 command! NextNode call s:Next_Node()
 command! ExitSession call s:Exit_Session()
+command! PrintCurrentTask call s:Print_Current_Task()
 
 let s:job_id = 0
 let s:regex_type = ""
@@ -97,6 +98,21 @@ function! s:Print_Session() abort
       throw "Failed to print session" 
     else 
       let s:regex_type = "p"
+    endif
+  endif
+endfunction
+
+function! s:Print_Current_Task() abort
+  let running = jobwait([s:job_id], 0)[0] == -1
+  if running == 0
+    throw "Shell server is not running"
+  else 
+    " run p on shell
+    let l:out = chansend(s:job_id, "g\n")
+    if l:out == 0 
+      throw "Failed to print current task" 
+    else 
+      let s:regex_type = "g"
     endif
   endif
 endfunction

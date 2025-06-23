@@ -50,6 +50,8 @@ class Session:
     sess_name: str
     Files: List[File] = field(default_factory=list) 
 
+num_of_nodes = 0
+
 def find_greatest_id(session):
     greatest_id = 0
     for file in session.Files:
@@ -62,8 +64,6 @@ def find_greatest_id(session):
                         if greatest_id < goal.id:
                             greatest_id = goal.id
     return greatest_id
-
-num_of_nodes = 0
 
 def grab_selected_goal(s_str):
     # Get selected goal, greedy
@@ -208,6 +208,19 @@ def next_node():
     s = f"On node: {sel_node_num}"
     return s
 
+def grab_current_task(s_str):
+    match = re.search(r"Goal\sis:(.*)", s_str, re.DOTALL)
+    if match:
+        full_context = match.group(1)
+        match_goal = re.search(r"------------------------------- Goal --------------------------------(.*)", full_context)
+        if match_goal:
+            goal = match_goal.group(1)
+            return goal
+        else: 
+            return full_context
+    else:
+        raise RegexFailure("Failed to grab current task")
+
 def grab_data(s_str):
     regex_type = vim.eval("s:regex_type") 
     match regex_type:
@@ -221,6 +234,12 @@ def grab_data(s_str):
         case "ng":
             try:
                return next_node()
+            except Exception as e:
+                raise e
+        case "g":
+            try:
+                str_to_highlight = grab_current_task(s_str)
+                return str_to_highlight
             except Exception as e:
                 raise e
         case "start": 

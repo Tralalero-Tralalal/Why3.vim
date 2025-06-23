@@ -25,7 +25,7 @@ py3 import why3
 
 function! s:OnStdout(id, data, event) abort dict
   let str = join(a:data, "\n")
-  call py3eval('why3.On_Ev(vim.eval("str"))') 
+  call py3eval('why3.On_Ev(vim.eval("str"), vim.eval("s:regex_type"))') 
 endfunction
 
 function! s:Initialize_Session(timer_id) abort

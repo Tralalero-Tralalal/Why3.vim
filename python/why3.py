@@ -221,8 +221,7 @@ def grab_current_task(s_str):
     else:
         raise RegexFailure("Failed to grab current task")
 
-def grab_data(s_str):
-    regex_type = vim.eval("s:regex_type") 
+def grab_data(s_str, regex_type):
     match regex_type:
         case "p": 
             try:
@@ -255,9 +254,9 @@ def grab_data(s_str):
             raise UnavailableCommand("Command is not available")
 
 
-def On_Ev(s_str):
+def On_Ev(s_str, regex_type):
     try:
-        new_data = grab_data(s_str)
+        new_data = grab_data(s_str, regex_type)
         print(new_data)
     except UnavailableCommand as e:
         print(f"COMMAND ERROR: {e}")
